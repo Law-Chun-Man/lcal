@@ -26,6 +26,10 @@ Then set the timezone.
 lcal -t [TZ] # or --set-timezone [TZ]
 ```
 
+### Import from Other Calendars
+
+Export calendar in iCalendar .ics format, then point `ics_path` in the configuration file at the exported .ics file.
+
 ### Holidays
 
 To display public holidays, point `holidays_ics_path` in the configuration file at a local iCalendar file.  Many countries publish official holiday calendars in iCalendar format that can be downloaded from <https://www.officeholidays.com/countries>. Go to the website, choose the country you live in, click "Subscribe to Calendar", then open the link given in the page, the iCalendar file containing public holidays of your country will be downloaded.
@@ -43,7 +47,7 @@ All key bindings can be customised in the configuration file.
 | `g` | Go to a specific date |
 | `z` | Change timezone |
 
-### Calendar tab
+### Calendar Tab
 
 | Key | Action |
 |-----|--------|
@@ -57,7 +61,7 @@ All key bindings can be customised in the configuration file.
 | `a` | Add an event on the selected day |
 | `i` | Enter event-selection mode |
 
-### Event-selection mode
+### Event-selection Mode
 
 | Key | Action |
 |-----|--------|

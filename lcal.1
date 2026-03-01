@@ -1,0 +1,298 @@
+.TH LCAL 1 "March 2026" "lcal" "User Commands"
+.SH NAME
+lcal \- a simple terminal calendar with timezone support
+.SH SYNOPSIS
+.B lcal
+[\fB\-l\fR]
+[\fB\-t\fR \fITIMEZONE\fR]
+.SH DESCRIPTION
+.B lcal
+is a terminal user-interface (TUI) calendar application written in Python.
+It displays a monthly calendar grid alongside a sidebar showing a todo list
+and the events for the currently selected day.
+Events are stored in iCalendar (.ics) format and all timed events carry full
+IANA timezone information.
+.SH OPTIONS
+.TP
+.BR \-l ", " \-\-list\-timezones
+Print every available IANA timezone name to standard output and exit.
+.TP
+.BR \-t " \fITIMEZONE\fR, " \-\-set\-timezone " \fITIMEZONE\fR"
+Persist \fITIMEZONE\fR (an IANA zone name such as
+.IR Europe/London )
+to the configuration file and exit.
+.SH KEY BINDINGS
+Key bindings can be customised in the configuration file (see
+.BR FILES ).
+The defaults are listed below.
+.SS Global
+.TP
+.B Tab
+Toggle focus between the calendar and the sidebar.
+.TP
+.B q
+Quit the application.
+.TP
+.B g
+Go to a specific date.
+.TP
+.B z
+Change the display timezone interactively.
+.SS Calendar view
+.TP
+.BR h " / " \(la
+Move the cursor one day to the left.
+.TP
+.BR l " / " \(ra
+Move the cursor one day to the right.
+.TP
+.BR j " / " \(da
+Move the cursor one week down.
+.TP
+.BR k " / " \(ua
+Move the cursor one week up.
+.TP
+.B t
+Jump the cursor to today's date.
+.TP
+.B n
+Advance to the next month.
+.TP
+.B p
+Go back to the previous month.
+.TP
+.B a
+Add a new event on the currently selected day.
+.TP
+.B i
+Enter event-selection mode for the currently selected day.
+.SS Event-selection mode
+.TP
+.B Esc
+Exit event-selection mode.
+.TP
+.BR j " / " \(da
+Move selection to the next event.
+.TP
+.BR k " / " \(ua
+Move selection to the previous event.
+.TP
+.B e
+Edit the selected event (name, start time, end time, colour, or move to a new date).
+A sub-prompt offers:
+.BR s " (start time), " e " (end time), " n " (name), " c " (colour), " m " (move to date)."
+.TP
+.B d
+Delete the selected event.
+.TP
+.B n
+Open the selected event's description in
+.BR $EDITOR .
+.SS Sidebar (TODO list)
+.TP
+.BR j " / " \(da
+Move the todo cursor down.
+.TP
+.BR k " / " \(ua
+Move the todo cursor up.
+.TP
+.B a
+Add a new todo item.
+.TP
+.B e
+Edit the selected todo item.
+.TP
+.B n
+Open the selected todo's note file in
+.BR $EDITOR .
+.TP
+.B d
+Delete the selected todo item.
+.TP
+.BR + " / " =
+Raise the todo item's priority (towards 1).
+.TP
+.B \-
+Lower the todo item's priority (towards 9).
+.SH ADDING EVENTS
+Press
+.B a
+in the calendar view to add an event:
+.IP 1. 4
+Enter a start time in
+.B HH:MM
+or
+.B HHMM
+format (24-hour by default), or press Enter to create an all-day event.
+.IP 2.
+Enter an end time in the same format, or press Enter to omit.  The end time
+must be strictly
+.I after
+the start time; entering an equal or earlier time is rejected with an error
+message.
+.IP 3.
+Enter the event name.
+.IP 4.
+Choose an optional colour.
+.SH CONFIGURATION
+The configuration file is
+.B ~/.config/lcal/config.py
+and is a plain Python script evaluated at startup.  It is created
+automatically with defaults on the first run.
+.SS Configuration keys
+.TP
+.B ics_path
+Path to the primary iCalendar file.
+.TP
+.B timezone
+IANA timezone name used for displaying and entering timed events.
+.TP
+.B show_timezone
+Boolean.  Display the timezone abbreviation in the calendar header.
+.TP
+.B show_day_borders
+Boolean.  Draw borders between calendar cells.
+.TP
+.B first_weekday
+Integer 1–7.  First day of the week (1=Monday, 7=Sunday).
+.TP
+.B sidebar_ratio
+Float 0–1.  Fraction of the terminal width occupied by the sidebar.
+.TP
+.B notes_extension
+File extension for event descriptions and todo notes (default
+.IR md ).
+.TP
+.B show_events_tab
+Boolean.  Show the Events section in the sidebar.
+.TP
+.B holidays_ics_path
+Path to a read-only iCalendar file containing public holidays.
+.TP
+.B holiday_colour
+Curses colour name used to highlight holiday dates
+(e.g.\&
+.IR COLOR_RED ).
+.TP
+.B time_24h
+Boolean.
+.B True
+for 24-hour clock (14:30),
+.B False
+for 12-hour AM/PM display (02:30PM).
+.TP
+.B date_format
+Format used when entering dates in the "go to date" prompt.
+Accepted values:
+.BR dd/mm/yyyy ,
+.BR mm/dd/yyyy ,
+.BR yyyy/mm/dd ,
+.BR yyyy-mm-dd .
+.TP
+.B event_date_format
+A
+.BR strftime (3)
+format string controlling the date label shown in the Events sidebar.
+For example
+.B %a %d %b %Y
+produces
+.IR "Mon 01 Jan 2024" .
+.TP
+.B editor
+Editor command used to open event descriptions and todo notes (e.g.\&
+.IR nano ,
+.IR nvim ,
+.IR micro ).
+Falls back to the
+.B EDITOR
+environment variable and then
+.IR vim .
+.TP
+.B event_spacing
+Boolean.  When
+.B True
+(the default), a blank spacer line is drawn between the day number and the
+first event, and between consecutive events within a day cell.  Set to
+.B False
+to pack events tightly.
+.TP
+.B events_tab_ratio
+Float 0–1.  Fraction of the sidebar height occupied by the Events tab
+(default 0.5).  Increase to give more space to events; decrease to give more
+space to the TODO list.
+.TP
+.B day_names
+List of seven strings, starting from Monday, used as column headers.
+.TP
+.B month_names
+List of twelve month name strings.
+.TP
+.B colours
+Dictionary mapping UI element names to
+.I [foreground, background]
+curses colour pairs.  Element names:
+.BR cursor ,
+.BR header ,
+.BR weekend ,
+.BR today ,
+.BR accent .
+.TP
+.B keybindings
+Dictionary mapping action names to single-character strings.  Only the
+actions you wish to override need to be present; unspecified actions keep
+their defaults.  Available action names:
+.BR quit ,
+.BR goto_date ,
+.BR change_timezone ,
+.BR go_today ,
+.BR next_month ,
+.BR prev_month ,
+.BR add_event ,
+.BR enter_event_selection ,
+.BR edit_event ,
+.BR delete_event ,
+.BR edit_description ,
+.BR move_up ,
+.BR move_down ,
+.BR move_left ,
+.BR move_right ,
+.BR todo_add ,
+.BR todo_edit ,
+.BR todo_open ,
+.BR todo_delete ,
+.BR todo_priority_up ,
+.BR todo_priority_down .
+.SH FILES
+.TP
+.B ~/.config/lcal/config.py
+User configuration file.
+.TP
+.B ~/.config/lcal/calendar.ics
+Primary event store in iCalendar format.
+.TP
+.B ~/.config/lcal/holidays.ics
+Optional read-only holiday calendar.
+.TP
+.B ~/.config/lcal/todo/
+Directory containing todo item files.
+.SH ENVIRONMENT
+.TP
+.B EDITOR
+Editor launched when opening event descriptions or todo notes.
+The
+.B editor
+configuration key takes precedence when set; this variable is consulted
+as a fallback, and
+.I vim
+is used when neither is set.
+.TP
+.B ESCDELAY
+Milliseconds to wait after receiving ESC before treating it as a standalone
+key.  lcal sets this to
+.B 25
+ms unless already defined in the environment.
+.SH AUTHOR
+Law Chun Man <lawchunman1@proton.me>
+.SH SEE ALSO
+.BR strftime (3),
+.BR vim (1)

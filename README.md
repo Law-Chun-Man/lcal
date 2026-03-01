@@ -10,6 +10,8 @@ pip install .
 
 ## Getting Started
 
+### Timezone
+
 Remember to set your timezone for your first run. To see all available IANA timezone.
 
 ```sh
@@ -21,6 +23,10 @@ Then set the timezone.
 ```sh
 lcal -t [TZ] # or --set-timezone [TZ]
 ```
+
+### Holidays
+
+To display public holidays, point `holidays_ics_path` at a local iCalendar file.  Many countries publish official holiday calendars in iCalendar format that can be downloaded from <https://www.officeholidays.com/countries>. Go to the website, choose the country you live in, click "Subscribe to Calendar", then open the link given in the page, the iCalendar file will be downloaded.
 
 ## Key Bindings (default)
 
@@ -121,28 +127,3 @@ The configuration file is located at `~/.config/lcal/config.py` and is created a
 | `month_names` | list | List of 12 month name strings |
 | `colours` | dict | Colour pairs for UI elements |
 | `keybindings` | dict | Map of action names to single-character keys |
-
-## Data files
-
-| File | Description |
-|------|-------------|
-| `~/.config/lcal/calendar.ics` | Main event store (iCalendar format) |
-| `~/.config/lcal/holidays.ics` | Optional read-only holiday calendar |
-| `~/.config/lcal/todo/` | Directory containing todo/note files |
-
-## Adding events
-
-Press `a` on a calendar day to add an event:
-
-1. Enter a start time (`HH:MM` or `HHMM`), or press Enter for an all-day event.
-2. Enter an end time (same format), or press Enter to skip. The end time must be strictly after the start time.
-3. Enter the event name.
-4. Choose an optional colour.
-
-## Holidays
-
-To display public holidays, point `holidays_ics_path` at a local ICS file.  Many countries publish official holiday calendars in ICS format that can be downloaded from providers such as <https://www.officeholidays.com>.
-
-## Timezones
-
-lcal stores all timed events with full timezone information.  Use `z` inside the app or `lcal --set-timezone IANA/Zone` on the command line to change the display timezone.  Run `lcal --list-timezones` to see all valid IANA zone names.

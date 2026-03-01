@@ -2,7 +2,7 @@
 
 ⚡Blazing fast calen... Just kidding, this is a python app. A simple TUI calendar app with timezone support, event/todo management and no dependencies outside of python standard library.
 
-![screenshot]("./screenshot.png")
+![screenshot](/screenshot.png)
 
 ## Installation
 

@@ -8,7 +8,7 @@ from datetime import date, datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from lcal.colours import EVENT_COLOUR_PAIRS, init_colours
-from lcal.config import load_config, save_config, DEFAULT_CONFIG
+from lcal.config import load_config, save_config, DEFAULT_CONFIG, TODO_DIR
 from lcal.events import Event
 from lcal.ics_parser import parse_ics, write_ics
 from lcal.todo import add_todo, change_todo_priority, delete_todo, load_todos, rename_todo, set_todo_colour
@@ -451,6 +451,7 @@ class CalendarApp:
             return
 
         cw = sidebar_w - 3 # usable content width
+        wrap_w = max(1, cw - 1) # wrapping width
         content_x = x_start + 2 # x of inner content
         right_x = x_start + sidebar_w - 1 # x of right border char
         mid = max(1, int((height - 1) * (1 - self.events_tab_ratio)))  # row where EVENTS box starts
@@ -527,10 +528,10 @@ class CalendarApp:
             first_line = True
             while remaining and row < todo_bot:
                 if first_line:
-                    chunk, remaining = _split_words(remaining, cw)
+                    chunk, remaining = _split_words(remaining, wrap_w)
                     first_line = False
                 else:
-                    inner = max(1, cw - len(indent))
+                    inner = max(1, wrap_w - len(indent))
                     piece, remaining = _split_words(remaining, inner)
                     chunk = indent + piece
                 try:
@@ -548,78 +549,113 @@ class CalendarApp:
         _vsides(mid + 1, bot_y, events_attr)
         _hline(bot_y, "└", "─", "┘", events_attr)
 
-        # EVENTS title
-        ev_title = " Events "
+        # When sidebar is focused and todos exist, show selected todo content
+        preview_todo = self.sidebar_focused and bool(self.todos)
+        selected_todo = self.todos[self.todo_cursor] if preview_todo else None
+
+        # Events/Todo preview title
+        if preview_todo:
+            ev_title = f" {selected_todo.name} "
+        else:
+            ev_title = " Events "
         ev_title_attr = curses.A_BOLD
         try:
             stdscr.addstr(mid + 1, content_x, ev_title[:cw], ev_title_attr)
         except curses.error:
             pass
 
-        # Underline below EVENTS title
+        # Underline below title
         try:
             if mid + 2 < bot_y:
                 stdscr.addstr(mid + 2, x_start, "├" + "─" * (sidebar_w - 2) + "┤", events_attr)
         except curses.error:
             pass
 
-        # Events content: holidays first, then regular events
         ev_row = mid + 3
-        day_holidays = []
-        day_events = []
-        if selected_date is not None:
-            if holidays_by_date is not None:
-                day_holidays = holidays_by_date.get(selected_date, [])
-            if events_by_date is not None:
-                day_events = events_by_date.get(selected_date, [])
-        all_day_events = day_holidays + day_events
-        if selected_date is not None:
-            date_label = selected_date.strftime(self.event_date_format)
-            try:
-                if ev_row < bot_y:
-                    stdscr.addstr(ev_row, content_x, date_label[:cw], curses.A_BOLD)
-                    ev_row += 2
-            except curses.error:
-                pass
 
-        # Loop over all events
-        for event_index, event in enumerate(all_day_events):
-            is_holiday = (event_index < len(day_holidays))
-            if ev_row >= bot_y:
-                break
-            # Determine event colour attribute
-            evt_attr = curses.A_NORMAL
-            if curses.has_colors() and event.colour:
-                pair_num = EVENT_COLOUR_PAIRS.get(event.colour)
-                if pair_num is not None:
-                    evt_attr = curses.color_pair(pair_num)
-            # Time string on its own line (not shown for holidays)
-            if not is_holiday:
-                if ev_row < bot_y:
+        if preview_todo:
+            # Show the selected todo item's file content
+            todo_content = ""
+            fpath = os.path.realpath(selected_todo.filepath)
+            if os.path.exists(fpath):
+                try:
+                    with open(fpath, "r") as f:
+                        todo_content = f.read()
+                except OSError:
+                    todo_content = ""
+            for line in todo_content.splitlines():
+                if ev_row >= bot_y:
+                    break
+                if not line:
+                    # Blank line – advance the row
+                    ev_row += 1
+                    continue
+                remaining = line
+                while remaining and ev_row < bot_y:
+                    chunk, remaining = _split_words(remaining, wrap_w)
                     try:
-                        stdscr.addstr(ev_row, content_x, event.time_str_in_tz(self.timezone, self.time_24h)[:cw].ljust(cw), evt_attr)
+                        stdscr.addstr(ev_row, content_x, chunk.ljust(cw), curses.A_NORMAL)
                     except curses.error:
                         pass
                     ev_row += 1
-            # Event name: wrap across multiple lines with consistent indent
-            prefix = "" if is_holiday else ("> " if event.description else "  ")
-            indent = " " * len(prefix)
-            full_name = prefix + event.summary
-            remaining = full_name
-            first_line = True
-            while remaining and ev_row < bot_y:
-                if first_line:
-                    chunk, remaining = _split_words(remaining, cw)
-                    first_line = False
-                else:
-                    inner = max(1, cw - len(indent))
-                    piece, remaining = _split_words(remaining, inner)
-                    chunk = indent + piece
+        else:
+            # Events content: holidays first, then regular events
+            day_holidays = []
+            day_events = []
+            if selected_date is not None:
+                if holidays_by_date is not None:
+                    day_holidays = holidays_by_date.get(selected_date, [])
+                if events_by_date is not None:
+                    day_events = events_by_date.get(selected_date, [])
+            all_day_events = day_holidays + day_events
+            if selected_date is not None:
+                date_label = selected_date.strftime(self.event_date_format)
                 try:
-                    stdscr.addstr(ev_row, content_x, chunk.ljust(cw), evt_attr)
+                    if ev_row < bot_y:
+                        stdscr.addstr(ev_row, content_x, date_label[:cw], curses.A_BOLD)
+                        ev_row += 2
                 except curses.error:
                     pass
-            ev_row += 2
+
+            # Loop over all events
+            for event_index, event in enumerate(all_day_events):
+                is_holiday = (event_index < len(day_holidays))
+                if ev_row >= bot_y:
+                    break
+                # Determine event colour attribute
+                evt_attr = curses.A_NORMAL
+                if curses.has_colors() and event.colour:
+                    pair_num = EVENT_COLOUR_PAIRS.get(event.colour)
+                    if pair_num is not None:
+                        evt_attr = curses.color_pair(pair_num)
+                # Time string on its own line (not shown for holidays)
+                if not is_holiday:
+                    if ev_row < bot_y:
+                        try:
+                            stdscr.addstr(ev_row, content_x, event.time_str_in_tz(self.timezone, self.time_24h)[:wrap_w].ljust(cw), evt_attr)
+                        except curses.error:
+                            pass
+                        ev_row += 1
+                # Event name: wrap across multiple lines with consistent indent
+                prefix = "" if is_holiday else ("> " if event.description else "  ")
+                indent = " " * len(prefix)
+                full_name = prefix + event.summary
+                remaining = full_name
+                first_line = True
+                while remaining and ev_row < bot_y:
+                    if first_line:
+                        chunk, remaining = _split_words(remaining, wrap_w)
+                        first_line = False
+                    else:
+                        inner = max(1, wrap_w - len(indent))
+                        piece, remaining = _split_words(remaining, inner)
+                        chunk = indent + piece
+                    try:
+                        stdscr.addstr(ev_row, content_x, chunk.ljust(cw), evt_attr)
+                    except curses.error:
+                        pass
+                    ev_row += 1
+                ev_row += 1  # spacing between events
 
     def _add_todo(self, stdscr, height, width):
         # Prompt user for name and priority, then create a todo item

@@ -41,7 +41,7 @@ def parse_ics(filepath):
             elif line.startswith("DTEND"):
                 dtend, _ = _parse_dt(line)
             elif line.startswith("COLOR:"):
-                colour = line[len("COLOR:"):].strip()
+                colour = f'COLOR_{line[len("COLOR:"):].upper().strip()}'
             elif line.startswith("DESCRIPTION:"):
                 description = line[len("DESCRIPTION:"):].replace("\\n", "\n")
 
@@ -92,7 +92,7 @@ def write_ics(filepath, events):
                 lines.append(f"DTEND;TZID={tz}:{event.dtend.strftime('%Y%m%dT%H%M%S')}")
         lines.append(f"SUMMARY:{event.summary}")
         if event.colour:
-            lines.append(f"COLOR:{event.colour}")
+            lines.append(f"COLOR:{event.colour[len('COLOR_'):].lower()}")
         if event.description:
             escaped = event.description.replace("\n", "\\n")
             lines.append(f"DESCRIPTION:{escaped}")

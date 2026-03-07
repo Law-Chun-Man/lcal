@@ -105,6 +105,10 @@ When editing (`e`), an additional sub-prompt is shown:
 | `n` | Edit todo name |
 | `c` | Edit colour |
 
+### Sidebar (Events tab)
+
+The events tab will show the events of the day, similar to the box of the day. When selecting TODO item, it will instead show the content of the TODO item, if there is one.
+
 ## Configuration
 
 The configuration file is located at `~/.config/lcal/config.py` and is created automatically on the first run.
